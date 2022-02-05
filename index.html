@@ -48,7 +48,8 @@
             var siz=Number(document.getElementById("size").value)
             var int=Number(ginoutilist[0])
             var edu=Number(ginoutilist[3])
-            if(dex<siz||str<siz){var mov="7"}else if(dex>siz&&str>siz){size="9"}else{mov="8"}
+            console.log(dex+""+str+""+siz)
+            if(dex<siz&&str<siz){var mov="7"}else if(dex>siz&&str>siz){size="9"}else{mov="8"}
             if(str+siz<65){var DB="-2";var build="-2"}else if(str+siz<85){DB="-1";build="-1"}else if(str+siz<125){DB="+0";build="0"}else if(str+siz<165){DB="+1D4";build="1"}else{DB="+1D6";build="2"}
 
 
