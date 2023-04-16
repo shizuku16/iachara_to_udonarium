@@ -17,79 +17,97 @@
         }
 
         function yomikomi(){
-            var date=document.getElementById("nyuryoku").value
-            date=JSON.parse(date)
-            var name=date.data.name
-            var hp=date.data.status[0].value
-            var mp=date.data.status[1].value
-            var san=date.data.status[2].value
-            var ginou=date.data.commands.split("\n")
-            var ginoutilist=[]
+            let data=document.getElementById("nyuryoku").value
+            data=JSON.parse(data)
+            const name=data.data.name
+            const hp=data.data.status[0].value
+            const mp=data.data.status[1].value
+            const san=data.data.status[2].value
+            const ginou=data.data.commands.split("\n")
+            const ginoutilist=[]
+            const list={}
             for(i=1;i<ginou.length-1;i++){
                 ginoutilist.push(ginou[i].match(/\d+/g)[0])
+                list[ginou[i].match(/【.*?】/)[0].replace(/【(.*?)】/,"$1")]=ginou[i].match(/\d+/g)[0]
             }
-            var ginoulist=[]
-            for(i=1;i<ginou.length-1;i++){
-                ginoulist.push(ginou[i].match(/【.*?】/)[0].replace(/【(.*?)】/,"$1"))
-                if(ginoulist[i-1].match("応急手当"))var tansaku=i-2
-                if(ginoulist[i-1].match("運転"))var koudou=i-2
-                if(ginoulist[i-1].match("言いくるめ"))var kousyou=i-2
-                if(ginoulist[i-1].match("医学"))var tisiki=i-2
-            }
-            var hyouzilist=[]
-            for(i=1;i<54;i++){
-                hyouzilist.push("        <data name=\""+ginoulist[i]+"\">"+ginoutilist[i]+"</data>\n")
-            }
-            var str=Number(ginoutilist[2])
-            var con=Number(ginoutilist[5])
-            var dex=Number(date.data.initiative)
-            var app=Number(ginoutilist[4])
-            var pow=Number(date.data.status[2].value)
-            var siz=Number(document.getElementById("size").value)
-            var int=Number(ginoutilist[0])
-            var edu=Number(ginoutilist[3])
-            console.log(typeof(str))
-            console.log(typeof(siz))
-            if(dex<siz&&str<siz){var mov="7"}else if(dex>siz&&str>siz){size="9"}else{mov="8"}
-            if(str+siz<65){var DB="-2";var build="-2"}else if(str+siz<85){DB="-1";build="-1"}else if(str+siz<125){DB="+0";build="0"}else if(str+siz<165){DB="+1D4";build="1"}else{DB="+1D6";build="2"}
 
+            const tansaku=["応急手当","鍵開け","隠す","隠れる","聞き耳","忍び歩き","写真術","精神分析","追跡","登攀","図書館","目星","手さばき","隠密","鑑定"]
+            const koudou=["運転","制作","操縦","機械修理","重機械操作","乗馬","水泳","跳躍","電気修理","ナビゲート","変装"]
+            const kousyou=["母国語","言語","言いくるめ","信用","説得","威圧","魅惑","値切り"]
+            const tisiki=["医学","オカルト","化学","クトゥルフ神話","経理","考古学","コンピューター","心理学","人類学","生物学","地質学","電子工学","天文学","博物学","物理学","法律","薬学","歴史","芸術","科学","サバイバル","自然"]
+            const sentou=["回避","近接戦闘","投擲","拳銃","射撃","キック","組み付き","こぶし","頭突き","マーシャルアーツ","サブマシンガン","ショットガン","マシンガン","ライフル"]
+            
+            let ginoutext=""
+            let chattext=""
+            const ginoulist=[sentou,tansaku,koudou,kousyou,tisiki]
+            const jginoulist=["戦闘技能","探索技能","行動技能","交渉技能","知識技能"]
+
+            //技能周りの処理
+            for(i=0;i<ginoulist.length;i++){
+                ginoutext+="      </data>\n      <data name=\""+jginoulist[i]+"\">\n"
+                chattext+="\n//-----"+jginoulist[i]+"\n"
+                for(let j=0;j<ginoulist[i].length;j++){
+                    const val = list[Object.keys(list).find(x => x.match(ginoulist[i][j]))];
+                    const key=Object.keys(list).find(x => x.match(ginoulist[i][j]))
+                    if(val){
+                        ginoutext+="        <data name=\""+key+"\">"+val+"</data>\n"
+                        chattext+="CC({ボーナス・ペナルティ})&lt;={"+key+"} 〈"+key+"〉\n"
+                    }
+                }                
+            }
+
+            //能力値周りの処理
+            let dex=Number(list[Object.keys(list).find(x => x.match("DEX"))])
+            let siz=Number(list[Object.keys(list).find(x => x.match("SIZ"))])
+            let str=Number(list[Object.keys(list).find(x => x.match("STR"))])
+            let mov=""
+            let DB=""
+            let build=""
+            let system="Cthulhu7th"
+            const status=["STR","CON","DEX","APP","POW","SIZ","INT","EDU"]
+            let statuschat=""
+            for(let j=0;j<status.length;j++){
+                statuschat+="\nCC({ボーナス・ペナルティ})&lt;={"+status[j]+"} "+status[j];
+                if(j==6) statuschat+="〈アイデア〉";
+                if(j==7) statuschat+="〈知識〉";
+            }
+            if(siz<=20){
+                dex=dex*5;
+                siz=siz*5;
+                str=str*5;
+                system="Cthulhu";
+                statuschat=statuschat.replace(/(\{...\})/g,"($1*5)")
+
+            }
+            if(dex<siz&&str<siz){mov="7"}else if(dex>siz&&str>siz){mov="9"}else{mov="8"}
+            if(str+siz<65){DB="-2";build="-2"}else if(str+siz<85){DB="-1";build="-1"}else if(str+siz<125){DB="+0";build="0"}else if(str+siz<165){DB="+1D4";build="1"}else{DB="+1D6";build="2"}
+            
 
             let writeString="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<character location.name=\"table\">\n  <data name=\"character\">\n    <data name=\"image\">\n      <data type=\"image\" name=\"imageIdentifier\"></data>\n    </data>\n    <data name=\"common\">\n      <data name=\"name\">"+name+"</data>\n      <data name=\"size\">1</data>\n    </data>\n    <data name=\"detail\">\n"
-            writeString+="      <data name=\"リソース\">\n        <data type=\"numberResource\" currentValue=\""+hp+"\" name=\"耐久力\">"+hp+"</data>\n        <data type=\"numberResource\" currentValue=\""+mp+"\" name=\"マジック・ポイント\">"+mp+"</data>\n        <data type=\"numberResource\" currentValue=\""+san+"\" name=\"正気度\">"+san+"</data>\n        <data type=\"numberResource\" currentValue=\""+ginoutilist[0]+"\" name=\"幸運\">"+ginoutilist[0]+"</data>\n        <data type=\"numberResource\" currentValue=\"0\" name=\"ボーナス・ペナルティ\">2</data>\n      </data>\n"
-            writeString+="      <data name=\"能力値\">\n        <data name=\"STR\">"+str+"</data>\n        <data name=\"CON\">"+con+"</data>\n        <data name=\"DEX\">"+dex+"</data>\n        <data name=\"APP\">"+app+"</data>\n        <data name=\"POW\">"+pow+"</data>\n        <data name=\"SIZ\">"+siz+"</data>\n        <data name=\"INT\">"+int+"</data>\n        <data name=\"EDU\">"+edu+"</data>\n        <data name=\"MOV\">7</data>\n        <data name=\"DB\">+0</data>\n        <data name=\"ビルド\">"+build+"</data>\n      </data>\n"
-            writeString+="      <data name=\"戦闘技能\">\n"
-            for(i=5;i<hyouzilist.length;i++){
-                if(i==tansaku)writeString+="      </data>\n      <data name=\"探索技能\">\n"
-                if(i==koudou)writeString+="      </data>\n      <data name=\"行動技能\">\n"
-                if(i==kousyou)writeString+="      </data>\n      <data name=\"交渉技能\">\n"
-                if(i==tisiki)writeString+="      </data>\n      <data name=\"知識技能\">\n"
-                writeString+=hyouzilist[i]
+            writeString+="      <data name=\"リソース\">\n        <data type=\"numberResource\" currentValue=\""+hp+"\" name=\"耐久力\">"+hp+"</data>\n        <data type=\"numberResource\" currentValue=\""+mp+"\" name=\"マジック・ポイント\">"+mp+"</data>\n        <data type=\"numberResource\" currentValue=\""+san+"\" name=\"正気度\">"+san+"</data>\n        <data type=\"numberResource\" currentValue=\""+list["幸運"]+"\" name=\"幸運\">"+list["幸運"]+"</data>\n        <data type=\"numberResource\" currentValue=\"0\" name=\"ボーナス・ペナルティ\">2</data>\n      </data>\n"
+            writeString+="      <data name=\"能力値\">"
+            for(let j=0;j<status.length;j++){
+                const val = list[Object.keys(list).find(x => x.match(status[j]))];
+                writeString+="\n        <data name=\""+status[j]+"\">"+val+"</data>"
             }
+            writeString+="\n        <data name=\"MOV\">"+mov+"</data>\n        <data name=\"DB\">"+DB+"</data>\n        <data name=\"ビルド\">"+build+"</data>\n"+ginoutext
             
-            writeString+="      </data>\n    </data>\n  </data>\n  <chat-palette dicebot=\"Cthulhu7th\">1d100\nCC\nCC({ボーナス・ペナルティ})&lt;=\n\n//-----正気度・狂気表\nCC({ボーナス・ペナルティ})&lt;={正気度} 〈正気度〉ロール\n現在正気度 {正気度}\nC(99-{クトゥルフ神話}) 最大正気度\nBMR 狂気の発作（リアルタイム）表\nBMS 狂気の発作（サマリー）表\nPH 恐怖症表\nMA マニア表\n\n//-----能力値ロール\nCC({ボーナス・ペナルティ})&lt;={STR} STR\nCC({ボーナス・ペナルティ})&lt;={CON} CON\nCC({ボーナス・ペナルティ})&lt;={SIZ} SIZ\nCC({ボーナス・ペナルティ})&lt;={DEX} DEX\nCC({ボーナス・ペナルティ})&lt;={APP} APP\nCC({ボーナス・ペナルティ})&lt;={INT} INT〈アイデア〉\nCC({ボーナス・ペナルティ})&lt;={POW} POW\nCC({ボーナス・ペナルティ})&lt;={EDU} EDU〈知識〉\nCC({ボーナス・ペナルティ})&lt;={幸運} 〈幸運〉\n\n\n//-----戦闘技能"
-            for(i=6;i<ginoulist.length;i++){
-                if(i+1==tansaku)writeString+="\n//-----探索技能\n"
-                if(i+1==koudou)writeString+="\n//-----行動技能\n"
-                if(i+1==kousyou)writeString+="\n//-----交渉技能\n"
-                if(i+1==tisiki)writeString+="\n//-----知識技能\n"
-                writeString+="CC({ボーナス・ペナルティ})&lt;={"+ginoulist[i]+"} 〈"+ginoulist[i]+"〉\n"
-            }
+            writeString+="      </data>\n    </data>\n  </data>\n  <chat-palette dicebot=\""+system+"\">1d100\nCC\nCC({ボーナス・ペナルティ})&lt;=\n\n//-----正気度・狂気表\nCC({ボーナス・ペナルティ})&lt;={正気度} 〈正気度〉ロール\n現在正気度 {正気度}\nC(99-{クトゥルフ神話}) 最大正気度\nBMR 狂気の発作（リアルタイム）表\nBMS 狂気の発作（サマリー）表\nPH 恐怖症表\nMA マニア表\n\n//-----能力値ロール"+statuschat+"\nCC({ボーナス・ペナルティ})&lt;={幸運} 〈幸運〉\n\n"+chattext
             writeString+="\n//-----プッシュ時の詠唱ロールでの失敗表\nFCL 控えめな呪文の場合\nFCM パワフルな呪文の場合</chat-palette>\n</character>"
         
+            if(system=="Cthulhu") writeString=writeString.replace(/CC/g,"CCB")
             download(writeString)
         }
     </script>
 </head>
 <body>
     いあきゃらでキャラ出力で「すべての技能を出力」を選択し、ココフォリア駒出力を押してください。  <br>
-    そこでコピーされた内容を下に貼り付け、SIZを入力してください。<br>
-    その後、ボタンをクリックするとxmlファイルをダウンロードします。それをユドナリウムに貼り付けるとキャラコマができます。<br>
+    そこでコピーされた内容を下に貼り付けてください。<br>
+    ダウンロードボタンをクリックするとxmlファイルをダウンロードします。それをユドナリウムに貼り付けるとキャラコマができます。<br>
     <br>
     ただし、武器に関するチャットパレットと、キャラ画像は反映されず、MOVは年齢による変動を考慮しない値となっています。<br>
     また、SAN値や幸運は初期状態となっているので、変更がある場合は手動でお願いします。
-   <br><textarea id="nyuryoku"  rows="10" cols="30" autofocus></textarea>
-   <br>SIZ:<input type=number id="size" style="width:45px;" step="5" min="0" max="100">
-
-   <input type="button" onclick="yomikomi()" value="クリック">
+   <br><textarea id="nyuryoku"  rows="10" cols="30" autofocus></textarea><br>
+   <input type="button" onclick="yomikomi()" value="ダウンロード">
 </body>
 </html>
